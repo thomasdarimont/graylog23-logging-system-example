@@ -4,24 +4,47 @@ services:
     image: "mongo:3"
     volumes:
       - ./data/mongo:/data/db
+
   graylog-elasticsearch:
-    image: "elasticsearch:2"
-    command: "elasticsearch -Des.cluster.name='graylog'"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:5.5.1"
+    environment:
+      - cluster.name=logging
+      - bootstrap.memory_lock=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+# xpack Auth need to allow access for graylog
+      - "xpack.security.enabled=false" 
     volumes:
       - ./data/elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+
   graylog:
     image: graylog2/server:2.3.0-1
     volumes:
       - ./data/journal:/usr/share/graylog/data/journal
       - ./config:/usr/share/graylog/data/config
+# http://docs.graylog.org/en/2.1/pages/users_and_roles/external_auth.html#single-sign-on
+      - $PWD/data/graylog/plugin/graylog-plugin-auth-sso-2.3.0.jar:/usr/share/graylog/plugin/graylog-plugin-auth-sso-2.3.0.jar
+#    hostname: logserver.tdlabs.local
     environment:
+# Graylog user admin:admin
       GRAYLOG_PASSWORD_SECRET: somepasswordpepper
       GRAYLOG_ROOT_PASSWORD_SHA2: 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
-      GRAYLOG_WEB_ENDPOINT_URI: http://127.0.0.1:9000/api
+#      GRAYLOG_WEB_ENDPOINT_URI: http://0.0.0.0:9000/
+#      GRAYLOG_REST_ENDPOINT_URI: http://0.0.0.0:9000/api
+# http://docs.graylog.org/en/2.3/pages/upgrade/graylog-2.3.html
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://graylog-elasticsearch:9200
+      GRAYLOG_ELASTICSEARCH_CLUSTER_NAME: logging
+#      GRAYLOG_TRUSTED_PROXIES: 127.0.0.1/32,127.0.0.2/32,192.168.178.1/16,172.24.0.1/16
     links:
       - graylog-mongo:mongo
       - graylog-elasticsearch:elasticsearch
     ports:
       - "9000:9000"
       - "12201/udp:12201/udp"
+      - "12202/udp:12202/udp"
+      - "12203/udp:12203/udp"
+      - "13201/tcp:13201/tcp"
+      - "13202/tcp:13202/tcp"
+      - "13203/tcp:13203/tcp"
       - "1514/udp:1514/udp"

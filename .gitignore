@@ -1,3 +1,12 @@
+config/node-id
 data/elasticsearch/
 data/journal/
+data/graylog/
 data/mongo/
+
+!data/elasticsearch/.gitkeep
+!data/journal/.gitkeep
+!data/graylog/.gitkeep
+!data/mongo/.gitkeep
+
+
